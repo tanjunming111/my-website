@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网站</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+        .back-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .edit-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #333;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+        .edit-btn:hover {
+            background-color: #555;
+        }
+
+        /* ===== 日记内容 Markdown 渲染 ===== */
+        .diary-body {
+            max-width: 700px;
+            margin: 30px auto 80px;
+            padding: 15px;
+            line-height: 1.7;
+        }
+        .diary-body h2 { font-size: 1.3em; color: #333; margin-bottom: 0.3em; }
+        .diary-body hr { border: none; border-top: 1px solid #e0e0e0; margin: 0.5em 0 1em; }
+        .diary-body h1 { font-size: 1.6em; margin: 0.6em 0 0.3em; }
+        .diary-body h3 { font-size: 1.15em; margin: 0.6em 0 0.3em; }
+        .diary-body p { margin: 0.6em 0; }
+        .diary-body ul, .diary-body ol { padding-left: 1.5em; margin: 0.5em 0; }
+        .diary-body blockquote {
+            border-left: 4px solid #ddd;
+            padding-left: 12px;
+            color: #666;
+            margin: 0.5em 0;
+        }
+        .diary-body code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .diary-body pre {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        .diary-body pre code { background: none; padding: 0; }
+        .diary-body img { max-width: 100%; border-radius: 6px; }
+        .diary-body table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0.5em 0;
+        }
+        .diary-body th, .diary-body td {
+            border: 1px solid #ddd;
+            padding: 8px 10px;
+            text-align: left;
+        }
+        .diary-body th { background: #f5f5f5; }
+
+        /* ===== 上/下篇导航 ===== */
+        .nav-container {
+            max-width: 700px;
+            margin: 0 auto 60px;
+            padding: 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-link {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 10px 20px;
+            background-color: #f5f5f5;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+            max-width: 45%;
+        }
+        .nav-link:hover {
+            background-color: #e0e0e0;
+        }
+        .nav-link.disabled {
+            color: #bbb;
+            pointer-events: none;
+            background-color: #fafafa;
+        }
+        .nav-link .nav-date {
+            display: block;
+            font-size: 12px;
+            color: #999;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .nav-link:hover .nav-date {
+            color: #666;
+        }
+
+        .interaction-panel { max-width: 700px; margin: 0 auto 60px; padding: 0 15px; }
+        .interaction-panel h3 { margin: 0 0 14px; }
+        .like-button { border: 0; border-radius: 20px; padding: 10px 18px; background: #fff0f0; color: #b42335; cursor: pointer; font-size: 16px; }
+        .like-button:disabled { opacity: .6; cursor: wait; }
+        .comment-form { display: grid; gap: 10px; margin: 22px 0; }
+        .comment-form input, .comment-form textarea { box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font: inherit; }
+        .comment-form textarea { min-height: 110px; resize: vertical; }
+        .comment-form button { justify-self: start; border: 0; border-radius: 20px; padding: 9px 20px; background: #333; color: white; cursor: pointer; font: inherit; }
+        .comment-list { display: grid; gap: 12px; }
+        .comment-item { padding: 14px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; }
+        .comment-meta { display: flex; justify-content: space-between; gap: 12px; color: #888; font-size: 13px; }
+        .comment-text { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .interaction-message { color: #777; font-size: 14px; }
+
+        /* ===== 加载状态：所有内容渲染完成后再一次性呈现 ===== */
+        body {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+        body.loading {
+            opacity: 0;
+            transition: none;
+        }
+    </style>
+</head>
+<body class="loading">
+    <div style="background-color: #f1f1f1; padding: 20px;">
+        <a href="index.html">
+            <img src="tjm.jpg" alt="tjm"
+                style="width:80px; height:80px; border-radius:50%; object-fit:cover;">
+        </a>
+    </div>
+    <div style="max-width: 700px; margin: 20px auto 80px; padding: 0 15px;">
+        <div class="top-bar">
+            <a href="menu.html" class="back-btn">&larr; 返回菜单</a>
+            <a href="#" class="edit-btn" id="edit-link">编辑</a>
+        </div>
+    </div>
+    <div id="diary-content" class="diary-body">
+        <!-- 内容由 JavaScript 动态填充 -->
+    </div>
+
+    <!-- 上/下篇导航 -->
+    <div class="nav-container" id="nav-container">
+        <a class="nav-link" id="prev-link" href="#">&larr; 上一篇</a>
+        <a class="nav-link" id="next-link" href="#">下一篇 &rarr;</a>
+    </div>
+
+    <section class="interaction-panel" id="interaction-panel" hidden aria-label="点赞和评论">
+        <h3>互动</h3>
+        <button class="like-button" id="like-button" type="button">♡ 点赞（<span id="like-count">0</span>）</button>
+        <p class="interaction-message" id="interaction-message" role="status"></p>
+        <h3 style="margin-top:28px;">评论</h3>
+        <form class="comment-form" id="comment-form">
+            <label>昵称<input id="comment-nickname" name="nickname" maxlength="40" required placeholder="请输入昵称"></label>
+            <label>评论内容<textarea id="comment-content" name="content" maxlength="2000" required placeholder="写下你的评论"></textarea></label>
+            <button type="submit">发表评论</button>
+        </form>
+        <div class="comment-list" id="comment-list"></div>
+    </section>
+
+    <div style="background-color:#f1f1f1; text-align:center; padding:20px;">
+        <p>我的网站</p>
+        <p><a href="changelog.html" style="color:#2d8cf0; text-decoration:none;">更新日志</a></p>
+    </div>
+
+    <script src="supabase-config.js"></script>
+    <script src="interactions.js"></script>
+    <script>
+        // 根据日期字符串返回英文星期几
+        function getWeekday(dateStr) {
+            var parts = dateStr.split("-");
+            var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][d.getDay()];
+        }
+
+        (function() {
+            var s = document.createElement('script');
+            s.src = 'diary-data.js?t=' + Date.now();
+            s.onload = function() {
+                var params = new URLSearchParams(window.location.search);
+                var date = params.get("date");
+                var container = document.getElementById("diary-content");
+
+                if (!date) {
+                    // 无日期参数时隐藏导航
+                    document.getElementById("nav-container").style.display = "none";
+                } else {
+                    document.getElementById("edit-link").href = "edit.html?date=" + date;
+                    var entry = getDiaryEntry(date);
+                    if (entry) {
+                        var weekday = getWeekday(entry.date);
+                        var html = "<h2>" + formatDateTitle(entry.date) + "&nbsp; <span style=\"font-weight:normal;font-style:normal;\">" + weekday + "</span></h2><hr>";
+                        html += marked.parse(entry.paragraphs.join("\n\n"));
+                        container.innerHTML = html;
+                        document.title = "我的网站 - " + formatDate(entry.date);
+                        window.initInteractions("diary", entry.date);
+                    } else {
+                        var weekday = getWeekday(date);
+                        container.innerHTML = "<h2>" + formatDateTitle(date) + "&nbsp; <span style=\"font-weight:normal;font-style:normal;\">" + weekday + "</span></h2><hr><p>未找到该日期的日记。</p>";
+                    }
+
+                    // 查找上一篇和下一篇
+                    var data = loadDiaryData();
+                    var currentIndex = -1;
+                    for (var i = 0; i < data.length; i++) {
+                        if (data[i].date === date) {
+                            currentIndex = i;
+                            break;
+                        }
+                    }
+
+                    var prevLink = document.getElementById("prev-link");
+                    var nextLink = document.getElementById("next-link");
+
+                    if (currentIndex > 0) {
+                        var prev = data[currentIndex - 1];
+                        prevLink.href = "diary.html?date=" + prev.date;
+                        prevLink.innerHTML = "&larr; 上一篇<span class=\"nav-date\">" + formatDate(prev.date) + "</span>";
+                    } else {
+                        prevLink.classList.add("disabled");
+                        prevLink.innerHTML = "&larr; 已是第一篇";
+                    }
+
+                    if (currentIndex >= 0 && currentIndex < data.length - 1) {
+                        var next = data[currentIndex + 1];
+                        nextLink.href = "diary.html?date=" + next.date;
+                        nextLink.innerHTML = "下一篇 &rarr;<span class=\"nav-date\">" + formatDate(next.date) + "</span>";
+                    } else {
+                        nextLink.classList.add("disabled");
+                        nextLink.innerHTML = "已是最后一篇 &rarr;";
+                    }
+                }
+
+                // 所有内容渲染完毕，一次性显示页面
+                document.body.classList.remove('loading');
+            };
+            document.head.appendChild(s);
+        })();
+    </script>
+</body>
+</html>

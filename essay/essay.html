@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网站 - 随笔</title>
+    <style>
+        body {
+            margin: 0;
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+        body.loading {
+            opacity: 0;
+            transition: none;
+        }
+
+        /* ===== 顶部导航 ===== */
+        .top-bar {
+            max-width: 750px;
+            margin: 0 auto;
+            padding: 20px 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+        .back-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .edit-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #333;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+        .edit-btn:hover {
+            background-color: #555;
+        }
+
+        /* ===== 随笔正文 ===== */
+        .essay-body {
+            max-width: 750px;
+            margin: 30px auto 80px;
+            padding: 15px;
+            line-height: 1.8;
+        }
+        .essay-body h2 {
+            font-size: 26px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .essay-body .essay-date {
+            font-size: 15px;
+            color: #999;
+            margin-bottom: 20px;
+        }
+        .essay-body .essay-content {
+            font-size: 16px;
+            color: #444;
+        }
+        .essay-body .essay-content p {
+            margin: 0.3em 0;
+            text-indent: 2em; /* 每行缩进两个字符 */
+        }
+        .interaction-panel { max-width: 750px; margin: 0 auto 60px; padding: 0 15px; }
+        .interaction-panel h3 { margin: 0 0 14px; }
+        .like-button { border: 0; border-radius: 20px; padding: 10px 18px; background: #fff0f0; color: #b42335; cursor: pointer; font-size: 16px; }
+        .like-button:disabled { opacity: .6; cursor: wait; }
+        .comment-form { display: grid; gap: 10px; margin: 22px 0; }
+        .comment-form input, .comment-form textarea { box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font: inherit; }
+        .comment-form textarea { min-height: 110px; resize: vertical; }
+        .comment-form button { justify-self: start; border: 0; border-radius: 20px; padding: 9px 20px; background: #333; color: white; cursor: pointer; font: inherit; }
+        .comment-list { display: grid; gap: 12px; }
+        .comment-item { padding: 14px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; }
+        .comment-meta { display: flex; justify-content: space-between; gap: 12px; color: #888; font-size: 13px; }
+        .comment-text { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .interaction-message { color: #777; font-size: 14px; }
+    </style>
+</head>
+<body class="loading">
+    <!-- 顶部头像区域 -->
+    <div style="background-color: #f1f1f1; padding: 20px;">
+        <a href="../index.html">
+            <img src="../tjm.jpg" alt="tjm"
+                style="width:80px; height:80px; border-radius:50%; object-fit:cover;">
+        </a>
+    </div>
+
+    <!-- 导航栏 -->
+    <div class="top-bar">
+        <a href="e-menu.html" class="back-btn">&larr; 返回列表</a>
+        <a href="#" class="edit-btn" id="edit-link">编辑</a>
+    </div>
+
+    <!-- 随笔正文 -->
+    <div class="essay-body" id="essay-content">
+        <!-- 由下方 JavaScript 动态填充 -->
+    </div>
+
+    <section class="interaction-panel" id="interaction-panel" hidden aria-label="点赞和评论">
+        <h3>互动</h3>
+        <button class="like-button" id="like-button" type="button">♡ 点赞（<span id="like-count">0</span>）</button>
+        <p class="interaction-message" id="interaction-message" role="status"></p>
+        <h3 style="margin-top:28px;">评论</h3>
+        <form class="comment-form" id="comment-form">
+            <label>昵称<input id="comment-nickname" name="nickname" maxlength="40" required placeholder="请输入昵称"></label>
+            <label>评论内容<textarea id="comment-content" name="content" maxlength="2000" required placeholder="写下你的评论"></textarea></label>
+            <button type="submit">发表评论</button>
+        </form>
+        <div class="comment-list" id="comment-list"></div>
+    </section>
+
+    <!-- 底部 -->
+    <div style="background-color:#f1f1f1; text-align:center; padding:20px;">
+        <p>我的网站</p>
+        <p><a href="../changelog.html" style="color:#2d8cf0; text-decoration:none;">更新日志</a></p>
+    </div>
+
+    <script src="../supabase-config.js"></script>
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+        // 在 supabase-config.js 中填入 Supabase 项目 URL 和 publishable key。
+        const config = window.SUPABASE_CONFIG;
+        const configured = config && config.SUPABASE_URL.startsWith('https://')
+            && !config.SUPABASE_URL.includes('你的项目编号')
+            && config.SUPABASE_PUBLISHABLE_KEY.startsWith('sb_publishable_')
+            && !config.SUPABASE_PUBLISHABLE_KEY.includes('在这里填写');
+        const db = configured ? createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY) : null;
+
+        function setInteractionMessage(message, isError = false) {
+            const node = document.getElementById('interaction-message');
+            node.textContent = message;
+            node.style.color = isError ? '#b42335' : '';
+        }
+
+        let toastTimer;
+        function showToast(text) {
+            let toast = document.getElementById('action-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'action-toast';
+                toast.setAttribute('role', 'status');
+                toast.setAttribute('aria-live', 'polite');
+                toast.style.cssText = 'position:fixed;left:50%;bottom:28px;z-index:9999;transform:translate(-50%, 12px);padding:11px 22px;border-radius:8px;background:rgba(25,25,25,.94);color:#fff;font-size:15px;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;visibility:hidden;transition:opacity .35s ease, transform .35s ease, visibility .35s;pointer-events:none;';
+                document.body.append(toast);
+            }
+            clearTimeout(toastTimer);
+            toast.textContent = text;
+            toast.style.visibility = 'visible';
+            requestAnimationFrame(function() {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translate(-50%, 0)';
+            });
+            toastTimer = setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, 12px)';
+                toastTimer = setTimeout(function() { toast.style.visibility = 'hidden'; }, 350);
+            }, 1500);
+        }
+
+        async function loadInteractions(essayId) {
+            const panel = document.getElementById('interaction-panel');
+            panel.hidden = false;
+            if (!db) {
+                setInteractionMessage('请先在项目根目录的 supabase-config.js 中配置 Supabase URL 和 Publishable key。');
+                document.getElementById('like-button').disabled = true;
+                document.querySelector('#comment-form button').disabled = true;
+                return;
+            }
+
+            const visitorKey = 'blog-visitor-id';
+            let visitorId = localStorage.getItem(visitorKey);
+            if (!visitorId) {
+                visitorId = crypto.randomUUID();
+                localStorage.setItem(visitorKey, visitorId);
+            }
+            const likeButton = document.getElementById('like-button');
+            const likeCount = document.getElementById('like-count');
+            const commentList = document.getElementById('comment-list');
+
+            async function refreshLikes() {
+                const { count, error } = await db.from('content_likes').select('*', { count: 'exact', head: true }).eq('content_type', 'essay').eq('content_id', String(essayId));
+                if (error) throw error;
+                likeCount.textContent = count || 0;
+                const { data: mine, error: mineError } = await db.from('content_likes').select('content_id').eq('content_type', 'essay').eq('content_id', String(essayId)).eq('visitor_id', visitorId).maybeSingle();
+                if (mineError) throw mineError;
+                likeButton.dataset.liked = mine ? 'true' : 'false';
+                likeButton.firstChild.textContent = mine ? '♥ 已点赞（' : '♡ 点赞（';
+                likeButton.disabled = Boolean(mine);
+            }
+
+            async function refreshComments() {
+                const { data, error } = await db.from('content_comments').select('nickname, content, created_at').eq('content_type', 'essay').eq('content_id', String(essayId)).order('created_at', { ascending: false });
+                if (error) throw error;
+                commentList.replaceChildren();
+                if (!data || data.length === 0) {
+                    const empty = document.createElement('p');
+                    empty.className = 'interaction-message';
+                    empty.textContent = '还没有评论，来发表第一条评论吧。';
+                    commentList.append(empty);
+                    return;
+                }
+                data.forEach(comment => {
+                    const card = document.createElement('article');
+                    card.className = 'comment-item';
+                    const meta = document.createElement('div');
+                    meta.className = 'comment-meta';
+                    const nickname = document.createElement('strong');
+                    nickname.textContent = comment.nickname;
+                    const date = document.createElement('time');
+                    date.textContent = new Date(comment.created_at).toLocaleString();
+                    meta.append(nickname, date);
+                    const content = document.createElement('p');
+                    content.className = 'comment-text';
+                    content.textContent = comment.content;
+                    card.append(meta, content);
+                    commentList.append(card);
+                });
+            }
+
+            try {
+                await Promise.all([refreshLikes(), refreshComments()]);
+            } catch (error) {
+                setInteractionMessage('加载互动内容失败：' + error.message, true);
+            }
+
+            const submitButton = document.querySelector('#comment-form button[type="submit"]');
+            const cooldownKey = 'comment-cooldown:' + visitorId;
+            let cooldownUntil = Number(localStorage.getItem(cooldownKey)) || 0;
+            let cooldownTimer;
+            function updateCooldown() {
+                const secondsLeft = Math.ceil((cooldownUntil - Date.now()) / 1000);
+                if (secondsLeft > 0) {
+                    submitButton.disabled = true;
+                    submitButton.textContent = '请等待 ' + secondsLeft + ' 秒后再评论';
+                    cooldownTimer = setTimeout(updateCooldown, 250);
+                } else {
+                    submitButton.disabled = false;
+                    submitButton.textContent = '发表评论';
+                    localStorage.removeItem(cooldownKey);
+                }
+            }
+            updateCooldown();
+
+            likeButton.addEventListener('click', async () => {
+                likeButton.disabled = true;
+                try {
+                    const { error } = await db.from('content_likes').insert({ content_type: 'essay', content_id: String(essayId), visitor_id: visitorId });
+                    if (error) throw error;
+                    await refreshLikes();
+                    showToast(likeButton.dataset.liked === 'true' ? '点赞成功' : '已取消点赞');
+                } catch (error) {
+                    setInteractionMessage('点赞操作失败：' + error.message, true);
+                } finally {
+                    likeButton.disabled = likeButton.dataset.liked === 'true';
+                }
+            });
+
+            document.getElementById('comment-form').addEventListener('submit', async event => {
+                event.preventDefault();
+                const nicknameInput = document.getElementById('comment-nickname');
+                const contentInput = document.getElementById('comment-content');
+                const nickname = nicknameInput.value.trim();
+                const content = contentInput.value.trim();
+                if (!nickname || !content) {
+                    setInteractionMessage('请填写昵称和评论内容。', true);
+                    return;
+                }
+                if (Date.now() < cooldownUntil) { updateCooldown(); return; }
+                const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                try {
+                    const { error } = await db.from('content_comments').insert({ content_type: 'essay', content_id: String(essayId), visitor_id: visitorId, nickname, content });
+                    if (error) throw error;
+                    contentInput.value = '';
+                    await refreshComments();
+                    cooldownUntil = Date.now() + 10000;
+                    localStorage.setItem(cooldownKey, String(cooldownUntil));
+                    updateCooldown();
+                    showToast('评论成功');
+                } catch (error) {
+                    setInteractionMessage(error.message.includes('10 seconds') || error.message.includes('10 秒')
+                        ? '评论间隔为 10 秒，请稍后再试。'
+                        : '评论发布失败：' + error.message, true);
+                    updateCooldown();
+                }
+            });
+        }
+
+        (function() {
+            var s = document.createElement('script');
+            s.src = 'essay-data.js?t=' + Date.now();
+            s.onload = function() {
+                var params = new URLSearchParams(window.location.search);
+                var id = parseInt(params.get("id"), 10);
+                var essay = getEssayById(id);
+                var container = document.getElementById("essay-content");
+
+                if (!essay) {
+                    container.innerHTML = '<h2>未找到该随笔</h2><p style="color:#999;">请返回随笔列表重新选择。</p>';
+                    document.title = "我的网站 - 未找到";
+                    document.getElementById("edit-link").style.display = "none";
+                } else {
+                    document.title = "我的网站 - " + essay.title;
+                    // 设置编辑链接
+                    document.getElementById("edit-link").href = "e-edit.html?id=" + essay.id;
+                    // 将内容按 <br> 切分成段落，每段用 <p> 包裹
+                    var paragraphs = essay.content.split(/<br\s*>/);
+                    var contentHtml = "";
+                    for (var i = 0; i < paragraphs.length; i++) {
+                        if (paragraphs[i].trim() !== "") {
+                            contentHtml += "<p>" + paragraphs[i] + "</p>";
+                        }
+                    }
+                    container.innerHTML =
+                        '<h2>' + essay.title + '</h2>' +
+                        '<div class="essay-date">' + essay.date + '</div>' +
+                        '<div class="essay-content">' + contentHtml + '</div>';
+                    loadInteractions(essay.id);
+                }
+
+                // 所有内容渲染完毕，一次性显示页面
+                document.body.classList.remove('loading');
+            };
+            document.head.appendChild(s);
+        })();
+    </script>
+</body>
+</html>

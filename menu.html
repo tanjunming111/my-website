@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- 设置视口：使网页在移动设备上按设备宽度缩放，初始缩放比例为1.0，确保响应式布局正常显示 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网站 - 菜单</title>
+    <style>
+        .menu-container {
+            max-width: 700px;
+            margin: 30px auto 80px;
+            padding: 0 15px;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+        .back-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .edit-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #333;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+        .edit-btn:hover {
+            background-color: #555;
+        }
+        .month-title {
+            font-size: 22px;
+            color: #333;
+            margin: 30px 0 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .date-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .date-list a {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 15px;
+            transition: background-color 0.2s ease;
+        }
+        .date-list a:hover {
+            background-color: #d0d0d0;
+        }
+        .empty-msg {
+            color: #999;
+            font-size: 15px;
+            padding: 20px 0;
+        }
+
+        /* ===== 日期快速跳转栏 ===== */
+        .jump-section {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .jump-section label {
+            font-size: 14px;
+            color: #555;
+            font-weight: bold;
+        }
+        .jump-input {
+            width: 60px;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .jump-sep {
+            font-size: 16px;
+            color: #999;
+        }
+        .jump-btn {
+            padding: 8px 22px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .jump-btn:hover {
+            background-color: #555;
+        }
+        .jump-hint {
+            font-size: 13px;
+            color: #999;
+            margin-left: 5px;
+        }
+
+        /* ===== 自动消失的提示消息 ===== */
+        .toast-msg {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 30px;
+            background-color: #d9534f;
+            color: #fff;
+            border-radius: 25px;
+            font-size: 15px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .toast-msg.show {
+            opacity: 1;
+        }
+
+        /* ===== 加载状态：所有内容渲染完成后再一次性呈现 ===== */
+        body {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+        /* 页面加载状态样式：当 body 带有 loading 类时，将整个页面设为透明（opacity: 0），同时禁用所有过渡动画（transition: none）。
+           配合 JS 在动态内容渲染完成后移除 loading 类，实现"所有内容准备好后再一次性呈现"的效果，防止白屏闪烁 */
+        body.loading {
+            opacity: 0;
+            transition: none;
+        }
+    </style>
+</head>
+<!-- body标签：使用loading类在JS动态内容渲染完成前隐藏页面，防止白屏闪烁 -->
+<body class="loading"></body>
+    <div style="background-color: #f1f1f1; padding: 20px;">
+        <a href="index.html">
+            <img src="tjm.jpg" alt="tjm"
+                style="width:80px; height:80px; border-radius:50%; object-fit:cover;">
+        </a>
+    </div>
+    <div class="menu-container">
+        <div class="top-bar">
+            <a href="index.html" class="back-btn">&larr; 返回主页</a>
+            <a href="edit.html" class="edit-btn">+ 新增日记</a>
+        </div>
+        <!-- 日期快速跳转栏 -->
+        <div class="jump-section">
+            <label>查询日记：</label>
+            <input type="text" class="jump-input" id="jump-year" placeholder="年" maxlength="4" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')" style="width: 50px;">
+            <span class="jump-sep">年</span>
+            <input type="text" class="jump-input" id="jump-month" placeholder="月" maxlength="2" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')" style="width: 25px;">
+            <span class="jump-sep">月</span>
+            <input type="text" class="jump-input" id="jump-day" placeholder="日" maxlength="2" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')" style="width: 25px;">
+            <span class="jump-sep">日</span>
+            <!-- 三个输入框输入任何非数字字符（字母、小数点、符号等）都会被立即过滤，只能输入数字 -->
+            <button class="jump-btn" onclick="jumpToDate()">前往</button>
+        </div>
+        <div id="menu-content">
+            <!-- 菜单内容由 JavaScript 动态生成 -->
+        </div>
+    </div>
+    <div style="background-color:#f1f1f1; text-align:center; padding:20px;">
+        <p>我的网站</p>
+        <p><a href="changelog.html" style="color:#2d8cf0; text-decoration:none;">更新日志</a></p>
+    </div>
+
+    <!-- 自动消失的提示 -->
+    <div class="toast-msg" id="toast-msg"></div>
+
+    <script>
+        (function() {
+            var s = document.createElement('script');
+            // 添加时间戳防止浏览器缓存，确保获取最新数据
+            s.src = 'diary-data.js?t=' + Date.now();
+            s.onload = function() {
+                var menu = document.getElementById("menu-content");
+                var grouped = getDiaryByMonth();
+                var months = Object.keys(grouped);
+
+                if (months.length === 0) {
+                    menu.innerHTML = '<p class="empty-msg">暂无日记，点击"编辑日记"添加。</p>';
+                } else {
+                    var html = "";
+                    months.forEach(function(month) {
+                        html += '<h2 class="month-title">' + getMonthLabel(month) + '</h2>';
+                        html += '<div class="date-list">';
+                        grouped[month].forEach(function(entry) {
+                            html += '<a href="diary.html?date=' + entry.date + '">' + formatDate(entry.date) + '</a>';
+                        });
+                        html += '</div>';
+                    });
+                    menu.innerHTML = html;
+                }
+
+                // 所有内容渲染完毕，一次性显示页面
+                document.body.classList.remove('loading');
+            };
+            document.head.appendChild(s);
+        })();
+
+        // 校验并跳转到指定日期的日记
+        function jumpToDate() {
+            var year = document.getElementById("jump-year").value.trim();
+            var month = document.getElementById("jump-month").value.trim();
+            var day = document.getElementById("jump-day").value.trim();
+
+            // 未输入时使用占位符（当天日期）作为默认值
+            if (!year) year = document.getElementById("jump-year").placeholder;
+            if (!month) month = document.getElementById("jump-month").placeholder;
+            if (!day) day = document.getElementById("jump-day").placeholder;
+
+            // 补零处理：1 → 0001，1 → 01
+            year = year.padStart(4, "0");
+            month = month.padStart(2, "0");
+            day = day.padStart(2, "0");
+
+            var dateStr = year + "-" + month + "-" + day;
+
+            // 校验年月日数值范围是否合法（避免 new Date 对 0-99 年自动加 1900 的坑）
+            var y = parseInt(year, 10), m = parseInt(month, 10), d2 = parseInt(day, 10);
+            if (m < 1 || m > 12 || d2 < 1 || d2 > 31) {
+                showToast("请输入有效的日期");
+                return;
+            }
+
+            // 检查该日期是否有日记
+            if (typeof getDiaryEntry === "function" && getDiaryEntry(dateStr)) {
+                window.location.href = "diary.html?date=" + dateStr;
+            } else {
+                showToast("该日期暂无日记");
+            }
+        }
+
+        // 自动消失的提示
+        function showToast(msg) {
+            var el = document.getElementById("toast-msg");
+            el.textContent = msg;
+            el.classList.add("show");
+            clearTimeout(el._timer);
+            el._timer = setTimeout(function() {
+                el.classList.remove("show");
+            }, 1500); // 延迟 1500 毫秒后自动消失
+        }
+
+        // 回车键触发跳转 + 默认填充当天日期
+        document.addEventListener("DOMContentLoaded", function() {
+            // 默认用当天日期作为占位符
+            var today = new Date();
+            document.getElementById("jump-year").placeholder = today.getFullYear();
+            document.getElementById("jump-month").placeholder = today.getMonth() + 1;
+            document.getElementById("jump-day").placeholder = today.getDate();
+
+            var inputs = ["jump-year", "jump-month", "jump-day"];
+            inputs.forEach(function(id) {
+                document.getElementById(id).addEventListener("keydown", function(e) {
+                    if (e.key === "Enter") {
+                        // 自动跳到下一个输入框，最后一个则触发跳转
+                        var idx = inputs.indexOf(id);
+                        if (idx < inputs.length - 1) {
+                            document.getElementById(inputs[idx + 1]).focus();
+                        } else {
+                            jumpToDate();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

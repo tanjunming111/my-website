@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网站</title>
+    <style>
+        body {
+            margin: 0;
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+        body.loading {
+            opacity: 0;
+            transition: none;
+        }
+        .menu-btn {
+            display: inline-block;
+            padding: 6px 50px;
+            background-color: #333;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 18px;
+            transition: background-color 0.2s ease;
+            margin: 5px;
+        }
+        .menu-btn:hover {
+            background-color: #555;
+        }
+        .btn-group {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body class="loading">
+    <div style="background: linear-gradient(to bottom, transparent 80%, white 100%), url('background.png') center 55%/cover no-repeat; height: 400px;"></div>
+    <div style="
+        max-width: 700px;
+        margin: -130px auto 20px; /* -130px: 向上偏移130像素，与上方元素重叠；auto: 水平居中，自动计算左右边距；20px: 底部外边距20像素 */
+        padding: 15px;
+        line-height: 1.7;
+        text-align: center;
+    ">
+        <h2 style="font-size: 36px;">Jimmy</h2>
+        <hr>
+        <p style="font-size: 20px;">欢迎来到我的网站。</p>
+        <div class="btn-group">
+            <a href="menu.html" class="menu-btn">我的日记</a>
+            <br>
+            <a href="essay/e-menu.html" class="menu-btn">我的随笔</a>
+        </div>
+    </div>
+    <div style="background-color:#f1f1f1; text-align:center; padding:10px;">
+        <p style="margin:5px;">我的网站</p>
+        <p style="margin:5px;"><a href="changelog.html" style="color:#2d8cf0; text-decoration:none;">更新日志</a></p>
+    </div>
+
+    <script>
+        window.addEventListener('load', function() {
+            document.body.classList.remove('loading');
+        });
+    </script>
+</body>
+</html>

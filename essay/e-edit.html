@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网站 - 编辑随笔</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .edit-container {
+            max-width: 800px;
+            margin: 30px auto 50px;
+            padding: 0 15px;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .edit-section {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .edit-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input[type="date"],
+        .form-group input[type="text"] {
+            width: 100%;
+            max-width: 400px;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            width: 100%;
+            min-height: 350px;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+            line-height: 1.7;
+            resize: vertical;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .btn-save {
+            background-color: #333;
+            color: #fff;
+        }
+        .btn-save:hover {
+            background-color: #555;
+        }
+        .btn-delete {
+            background-color: #d9534f;
+            color: #fff;
+        }
+        .btn-delete:hover {
+            background-color: #c9302c;
+        }
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+        .btn-danger {
+            background-color: #d9534f;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background-color: #c9302c;
+        }
+        .existing-list {
+            list-style: none;
+            padding: 0;
+        }
+        .existing-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .existing-list li .item-info {
+            font-size: 15px;
+            color: #333;
+            flex: 1;
+            min-width: 0;
+        }
+        .existing-list li .item-info .item-title {
+            font-weight: bold;
+        }
+        .existing-list li .item-info .item-meta {
+            font-size: 13px;
+            color: #999;
+        }
+        .existing-list li .item-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+        .existing-list li .btn {
+            padding: 6px 16px;
+            font-size: 13px;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 15px;
+            color: #fff;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .toast.success {
+            background-color: #5cb85c;
+        }
+        .toast.error {
+            background-color: #d9534f;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9998;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal {
+            background: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .modal p {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .modal .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .file-link-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .btn-link {
+            display: inline-block;
+            padding: 8px 18px;
+            background-color: #2d8cf0;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .btn-link:hover {
+            background-color: #2d8cf0dd;
+        }
+        .file-status {
+            font-size: 13px;
+            color: #999;
+        }
+        .file-status.linked {
+            color: #5cb85c;
+        }
+
+        /* ===== 字数统计 ===== */
+        .char-count {
+            text-align: right;
+            font-size: 13px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        /* ===== Markdown 预览切换 ===== */
+        .md-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .md-tab {
+            padding: 6px 18px;
+            border: 1px solid #ccc;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            background: #fff;
+            color: #555;
+            transition: all 0.2s ease;
+        }
+        .md-tab.active {
+            background: #333;
+            color: #fff;
+            border-color: #333;
+        }
+        .md-tab:hover:not(.active) {
+            background: #f0f0f0;
+        }
+        .md-preview {
+            width: 100%;
+            min-height: 350px;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+            line-height: 1.7;
+            box-sizing: border-box;
+            background: #fff;
+            display: none;
+            overflow-y: auto;
+        }
+        .md-preview.show {
+            display: block;
+        }
+        .md-preview h1, .md-preview h2, .md-preview h3,
+        .md-preview h4, .md-preview h5, .md-preview h6 {
+            margin: 0.5em 0 0.3em;
+            color: #333;
+        }
+        .md-preview h1 { font-size: 1.6em; }
+        .md-preview h2 { font-size: 1.35em; }
+        .md-preview h3 { font-size: 1.15em; }
+        .md-preview p { margin: 0.5em 0; }
+        .md-preview ul, .md-preview ol { padding-left: 1.5em; margin: 0.5em 0; }
+        .md-preview blockquote {
+            border-left: 4px solid #ddd;
+            padding-left: 12px;
+            color: #666;
+            margin: 0.5em 0;
+        }
+        .md-preview code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .md-preview pre {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        .md-preview pre code {
+            background: none;
+            padding: 0;
+        }
+        .md-preview img { max-width: 100%; border-radius: 6px; }
+        .md-preview table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0.5em 0;
+        }
+        .md-preview th, .md-preview td {
+            border: 1px solid #ddd;
+            padding: 8px 10px;
+            text-align: left;
+        }
+        .md-preview th { background: #f5f5f5; }
+
+        /* ===== 加载状态 ===== */
+        body {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+        body.loading {
+            opacity: 0;
+            transition: none;
+        }
+    </style>
+</head>
+<body class="loading">
+    <div style="background-color: #f1f1f1; padding: 20px;">
+        <a href="../index.html">
+            <img src="../tjm.jpg" alt="tjm"
+                style="width:80px; height:80px; border-radius:50%; object-fit:cover;">
+        </a>
+    </div>
+
+    <div class="edit-container">
+        <a href="javascript:history.back()" class="back-btn">&larr; 返回上一页</a>
+
+        <div class="file-link-bar">
+            <button class="btn-link" id="link-btn" onclick="linkFile()">关联本地文件</button>
+            <span class="file-status" id="file-status">未关联本地文件</span>
+        </div>
+
+        <!-- 新增/编辑区域 -->
+        <div class="edit-section">
+            <h3 id="form-title">新增随笔</h3>
+            <div class="form-group">
+                <label for="title-input">标题</label>
+                <input type="text" id="title-input" placeholder="请输入随笔标题">
+            </div>
+            <div class="form-group">
+                <label for="date-input">日期</label>
+                <input type="date" id="date-input" lang="zh-CN">
+            </div>
+            <div class="form-group">
+                <label for="summary-input">摘要</label>
+                <textarea id="summary-input" placeholder="请输入摘要（显示在随笔列表中）" style="min-height: 80px;" oninput="updateCharCount()"></textarea>
+                <div style="margin-top: 6px;">
+                    <button class="btn btn-secondary" type="button" onclick="extractSummary()" style="padding: 6px 16px; font-size: 13px;">提取摘要</button>
+                </div>
+                <div class="char-count" id="summary-char-count">已写 0 字</div>
+            </div>
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <label for="content-input" style="margin-bottom: 0;">内容</label>
+                    <button class="btn btn-save" onclick="quickSaveEntry()" style="padding: 6px 18px; font-size: 13px;">保存</button>
+                </div>
+                <div class="md-toolbar">
+                    <span class="md-tab active" id="md-edit-tab" onclick="switchMdMode('edit')">编辑</span>
+                    <span class="md-tab" id="md-preview-tab" onclick="switchMdMode('preview')">预览</span>
+                </div>
+                <textarea id="content-input" placeholder="支持 Markdown 语法：**加粗** *斜体* #标题 -列表等" oninput="updateCharCount(); updatePreview();"></textarea>
+                <div class="md-preview" id="md-preview"></div>
+                <div class="char-count" id="content-char-count">已写 0 字</div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-save" onclick="saveEntry()">发布</button>
+                <button class="btn btn-danger" id="delete-btn" onclick="deleteCurrentEntry()" style="display:none">删除</button>
+            </div>
+        </div>
+
+        <!-- 已有随笔列表 -->
+        <div class="edit-section">
+            <h3>已有随笔</h3>
+            <ul class="existing-list" id="existing-list">
+                <!-- 由 JS 动态生成 -->
+            </ul>
+        </div>
+    </div>
+
+    <div style="background-color:#f1f1f1; text-align:center; padding:20px;">
+        <p>我的网站</p>
+        <p><a href="../changelog.html" style="color:#2d8cf0; text-decoration:none;">更新日志</a></p>
+    </div>
+
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 删除确认弹窗 -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <p id="modal-text">确认删除？</p>
+            <div class="modal-actions">
+                <button class="btn btn-delete" id="modal-confirm">确认删除</button>
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 动态加载 essay-data.js（带时间戳，强制获取最新版本）
+        (function() {
+            var s = document.createElement('script');
+            s.src = 'essay-data.js?t=' + Date.now();
+            s.onload = function() {
+                renderList();
+                initForm();
+                initFileLink();
+                // 检查 URL 参数，自动加载对应 id 的随笔
+                var params = new URLSearchParams(window.location.search);
+                var idParam = params.get("id");
+                if (idParam) {
+                    editEntry(parseInt(idParam, 10));
+                }
+
+                // 所有内容渲染完毕，一次性显示页面
+                document.body.classList.remove('loading');
+            };
+            document.head.appendChild(s);
+        })();
+
+        var editingId = null; // 当前正在编辑的 id（null 表示新增模式）
+        var fileHandle = null; // 关联的本地文件句柄
+
+        // ===== IndexedDB 存取文件句柄 =====
+        var DB_NAME = "essay_db";
+        var STORE_NAME = "file_handles";
+
+        function openDB() {
+            return new Promise(function(resolve, reject) {
+                var req = indexedDB.open(DB_NAME, 1);
+                req.onupgradeneeded = function() {
+                    req.result.createObjectStore(STORE_NAME);
+                };
+                req.onsuccess = function() { resolve(req.result); };
+                req.onerror = function() { reject(req.error); };
+            });
+        }
+
+        async function saveHandle(handle) {
+            var db = await openDB();
+            return new Promise(function(resolve, reject) {
+                var tx = db.transaction(STORE_NAME, "readwrite");
+                tx.objectStore(STORE_NAME).put(handle, "essay_file");
+                tx.oncomplete = function() { resolve(); };
+                tx.onerror = function() { reject(tx.error); };
+            });
+        }
+
+        async function loadHandle() {
+            var db = await openDB();
+            return new Promise(function(resolve, reject) {
+                var tx = db.transaction(STORE_NAME, "readonly");
+                var req = tx.objectStore(STORE_NAME).get("essay_file");
+                req.onsuccess = function() { resolve(req.result || null); };
+                req.onerror = function() { reject(req.error); };
+            });
+        }
+
+        // ===== 关联本地文件 =====
+        async function linkFile() {
+            if (!window.showOpenFilePicker) {
+                showToast("当前浏览器不支持文件关联功能", "error");
+                return;
+            }
+            try {
+                var handle = await window.showOpenFilePicker({
+                    types: [{
+                        description: "JavaScript 文件",
+                        accept: { "application/javascript": [".js"] }
+                    }]
+                });
+                fileHandle = handle[0];
+                await saveHandle(fileHandle);
+                updateFileStatus(true);
+                showToast("已关联本地文件", "success");
+            } catch (e) {
+                if (e.name !== "AbortError") {
+                    showToast("关联失败: " + e.message, "error");
+                }
+            }
+        }
+
+        // 更新文件状态显示
+        function updateFileStatus(linked) {
+            var status = document.getElementById("file-status");
+            if (linked) {
+                status.textContent = "已关联，保存时自动同步到本地文件";
+                status.className = "file-status linked";
+            } else {
+                status.textContent = "未关联本地文件";
+                status.className = "file-status";
+            }
+        }
+
+        // 检查并请求文件权限
+        async function verifyPermission(handle) {
+            var opts = { mode: "readwrite" };
+            if ((await handle.queryPermission(opts)) === "granted") {
+                return true;
+            }
+            if ((await handle.requestPermission(opts)) === "granted") {
+                return true;
+            }
+            return false;
+        }
+
+        // 生成 essay-data.js 文件内容
+        function generateFileContent() {
+            var data = loadEssayData();
+            var lines = [];
+            lines.push("// ==========================================");
+            lines.push("// 随笔数据文件 - 数据管理核心");
+            lines.push("// ==========================================");
+            lines.push("// 数据直接存储在此文件中");
+            lines.push("// 内容中的双引号请使用 \\\" 转义");
+            lines.push("");
+            lines.push("// 随笔数据（按 id 排序）");
+            lines.push("var defaultEssayData = [");
+            data.forEach(function(entry, i) {
+                lines.push("    {");
+                lines.push("        id: " + entry.id + ",");
+                lines.push("        title: \"" + entry.title.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\",");
+                lines.push("        date: \"" + entry.date + "\",");
+                lines.push("        summary: \"" + entry.summary.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\",");
+                // content 保留 <br> 标签格式，用字符串拼接形式
+                lines.push("        content: \"" + entry.content.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\"");
+                if (i < data.length - 1) {
+                    lines.push("    },");
+                } else {
+                    lines.push("    }");
+                }
+            });
+            lines.push("];");
+            lines.push("");
+            lines.push("// ===== 数据读写接口 =====");
+            lines.push("");
+            lines.push("function loadEssayData() {");
+            lines.push("    return defaultEssayData;");
+            lines.push("}");
+            lines.push("");
+            lines.push("function saveEssayData(data) {");
+            lines.push("    defaultEssayData = data;");
+            lines.push("}");
+            lines.push("");
+            lines.push("function getEssayById(id) {");
+            lines.push("    return defaultEssayData.find(function(e) { return e.id === id; });");
+            lines.push("}");
+            lines.push("");
+            lines.push("function addEssay(id, title, date, summary, content) {");
+            lines.push("    if (defaultEssayData.find(function(e) { return e.id === id; })) return false;");
+            lines.push("    defaultEssayData.push({ id: id, title: title, date: date, summary: summary, content: content });");
+            lines.push("    defaultEssayData.sort(function(a, b) { return a.id - b.id; });");
+            lines.push("    return true;");
+            lines.push("}");
+            lines.push("");
+            lines.push("function updateEssay(id, title, date, summary, content) {");
+            lines.push("    var essay = defaultEssayData.find(function(e) { return e.id === id; });");
+            lines.push("    if (essay) {");
+            lines.push("        essay.title = title;");
+            lines.push("        essay.date = date;");
+            lines.push("        essay.summary = summary;");
+            lines.push("        essay.content = content;");
+            lines.push("        return true;");
+            lines.push("    }");
+            lines.push("    return false;");
+            lines.push("}");
+            lines.push("");
+            lines.push("function deleteEssay(id) {");
+            lines.push("    var newData = defaultEssayData.filter(function(e) { return e.id !== id; });");
+            lines.push("    if (newData.length === defaultEssayData.length) return false;");
+            lines.push("    defaultEssayData = newData;");
+            lines.push("    return true;");
+            lines.push("}");
+            return lines.join("\n");
+        }
+
+        // 同步写入本地文件
+        async function syncToFile() {
+            if (!fileHandle) return;
+            try {
+                var hasPermission = await verifyPermission(fileHandle);
+                if (!hasPermission) {
+                    showToast("文件写入权限被拒绝", "error");
+                    return;
+                }
+                var content = generateFileContent();
+                var writable = await fileHandle.createWritable();
+                await writable.write(content);
+                await writable.close();
+            } catch (e) {
+                showToast("同步到文件失败: " + e.message, "error");
+            }
+        }
+
+        // 页面加载时检查已关联的文件
+        async function initFileLink() {
+            try {
+                var handle = await loadHandle();
+                if (handle) {
+                    fileHandle = handle;
+                    updateFileStatus(true);
+                }
+            } catch (e) {
+                console.error("加载文件句柄失败", e);
+            }
+        }
+
+        // 显示提示消息
+        function showToast(msg, type) {
+            var toast = document.getElementById("toast");
+            toast.textContent = msg;
+            toast.className = "toast show " + (type || "success");
+            setTimeout(function() {
+                toast.className = "toast";
+            }, 2500);
+        }
+
+        // 获取下一个可用的 id
+        function getNextId() {
+            var data = loadEssayData();
+            if (data.length === 0) return 1;
+            var maxId = 0;
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].id > maxId) maxId = data[i].id;
+            }
+            return maxId + 1;
+        }
+
+        // 渲染已有随笔列表
+        function renderList() {
+            var data = loadEssayData();
+            var list = document.getElementById("existing-list");
+
+            if (data.length === 0) {
+                list.innerHTML = "<li><span>暂无随笔</span></li>";
+                return;
+            }
+
+            // 按 id 降序排列（最新的在上面）
+            var sorted = data.slice().sort(function(a, b) { return b.id - a.id; });
+
+            var html = "";
+            sorted.forEach(function(entry) {
+                html += '<li>';
+                html += '<div class="item-info">';
+                html += '<div class="item-title">' + entry.title + '</div>';
+                html += '<div class="item-meta">' + entry.date + ' &middot; ' + (entry.summary.length > 40 ? entry.summary.substring(0, 40) + '…' : entry.summary) + '</div>';
+                html += '</div>';
+                html += '<div class="item-actions">';
+                html += '<button class="btn btn-secondary" onclick="editEntry(' + entry.id + ')">编辑</button>';
+                html += '<button class="btn btn-delete" onclick="confirmDelete(' + entry.id + ')">删除</button>';
+                html += '</div>';
+                html += '</li>';
+            });
+            list.innerHTML = html;
+        }
+
+        // 初始化表单（新增模式）
+        function initForm() {
+            editingId = null;
+            document.getElementById("form-title").textContent = "新增随笔";
+            document.getElementById("title-input").value = "";
+            // 设置默认日期为今天
+            var today = new Date();
+            var yyyy = today.getFullYear();
+            var mm = String(today.getMonth() + 1).padStart(2, '0');
+            var dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById("date-input").value = yyyy + "-" + mm + "-" + dd;
+            document.getElementById("date-input").disabled = false;
+            document.getElementById("summary-input").value = "";
+            document.getElementById("content-input").value = "";
+            updateCharCount();
+            document.getElementById("delete-btn").style.display = "none";
+        }
+
+        // 字数统计
+        function updateCharCount() {
+            var summaryText = document.getElementById("summary-input").value;
+            var contentText = document.getElementById("content-input").value;
+            document.getElementById("summary-char-count").textContent = "已写 " + summaryText.length + " 字";
+            document.getElementById("content-char-count").textContent = "已写 " + contentText.length + " 字";
+        }
+
+        // 自动提取正文前150个字符作为摘要
+        function extractSummary() {
+            var content = document.getElementById("content-input").value;
+            // 去除 Markdown 标记、多余空白和换行
+            var plain = content
+                .replace(/[*#>`\-_\[\]()!|~]/g, "")  // 去除常见 Markdown 符号
+                .replace(/\s+/g, "")                   // 去除所有空白和换行
+                .trim();
+            // 取前 150 个字符
+            var extracted = plain.substring(0, 150);
+            if (extracted.length === 0) {
+                showToast("正文内容为空，无法提取摘要", "error");
+                return;
+            }
+            document.getElementById("summary-input").value = extracted;
+            updateCharCount();
+            showToast("已提取前 " + extracted.length + " 个字符作为摘要", "success");
+        }
+
+        // 切换编辑/预览模式
+        function switchMdMode(mode) {
+            var textarea = document.getElementById("content-input");
+            var preview = document.getElementById("md-preview");
+            var editTab = document.getElementById("md-edit-tab");
+            var previewTab = document.getElementById("md-preview-tab");
+
+            if (mode === "preview") {
+                // 切换到预览：渲染 Markdown（启用 breaks 使换行可见）
+                preview.innerHTML = marked.parse(textarea.value || "*（暂无内容）*", { breaks: true });
+                textarea.style.display = "none";
+                preview.classList.add("show");
+                editTab.classList.remove("active");
+                previewTab.classList.add("active");
+            } else {
+                textarea.style.display = "";
+                preview.classList.remove("show");
+                editTab.classList.add("active");
+                previewTab.classList.remove("active");
+            }
+        }
+
+        // 实时更新预览内容
+        function updatePreview() {
+            var preview = document.getElementById("md-preview");
+            if (preview.classList.contains("show")) {
+                preview.innerHTML = marked.parse(document.getElementById("content-input").value || "*（暂无内容）*", { breaks: true });
+            }
+        }
+
+        // 编辑模式：加载已有随笔到表单
+        function editEntry(id) {
+            var essay = getEssayById(id);
+            if (essay) {
+                editingId = id;
+                document.getElementById("form-title").textContent = "编辑随笔 - " + essay.title;
+                document.getElementById("title-input").value = essay.title;
+                document.getElementById("date-input").value = essay.date;
+                document.getElementById("date-input").disabled = true;
+                document.getElementById("summary-input").value = essay.summary;
+                // 将 content 中的 <br> 还原为换行符，方便编辑
+                document.getElementById("content-input").value = essay.content.split(/<br\s*\/?>/i).join("\n");
+                updateCharCount();
+                document.getElementById("delete-btn").style.display = "";
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+        }
+
+        // 删除当前正在编辑的随笔
+        function deleteCurrentEntry() {
+            if (!editingId) return;
+            var essay = getEssayById(editingId);
+            var label = essay ? essay.title : ("#" + editingId);
+            document.getElementById("modal-text").textContent = "确认删除《" + label + "》？";
+            document.getElementById("modal").classList.add("show");
+            document.getElementById("modal-confirm").onclick = function() {
+                if (deleteEssay(editingId)) {
+                    showToast("随笔已删除", "success");
+                    initForm();
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("删除失败", "error");
+                }
+                closeModal();
+                document.getElementById("modal-confirm").onclick = defaultModalConfirm;
+            };
+        }
+
+        // 发布（新增或更新）
+        function saveEntry() {
+            var title = document.getElementById("title-input").value.trim();
+            var date = document.getElementById("date-input").value;
+            var summary = document.getElementById("summary-input").value.trim();
+            var content = document.getElementById("content-input").value;
+
+            if (!title) {
+                showToast("标题不能为空", "error");
+                return;
+            }
+            if (!date) {
+                showToast("日期不能为空", "error");
+                return;
+            }
+            if (!content.trim()) {
+                showToast("内容不能为空", "error");
+                return;
+            }
+            if (!summary) {
+                showToast("摘要不能为空", "error");
+                return;
+            }
+
+            // 将内容中的换行符转换为 <br> 格式（与现有数据格式保持一致）
+            var contentHtml = content.split("\n").map(function(s) { return s.trim(); }).join("<br>");
+
+            if (editingId) {
+                // 更新
+                if (updateEssay(editingId, title, date, summary, contentHtml)) {
+                    showToast("随笔已更新", "success");
+                    initForm();
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("更新失败", "error");
+                }
+            } else {
+                // 新增
+                var newId = getNextId();
+                if (addEssay(newId, title, date, summary, contentHtml)) {
+                    showToast("随笔已添加", "success");
+                    initForm();
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("添加失败", "error");
+                }
+            }
+        }
+
+        // 快速保存（保存在内容栏右侧的按钮，不重置表单、不跳转页面）
+        function quickSaveEntry() {
+            var title = document.getElementById("title-input").value.trim();
+            var date = document.getElementById("date-input").value;
+            var summary = document.getElementById("summary-input").value.trim();
+            var content = document.getElementById("content-input").value;
+
+            if (!title) {
+                showToast("标题不能为空", "error");
+                return;
+            }
+            if (!date) {
+                showToast("日期不能为空", "error");
+                return;
+            }
+            if (!content.trim()) {
+                showToast("内容不能为空", "error");
+                return;
+            }
+            if (!summary) {
+                showToast("摘要不能为空", "error");
+                return;
+            }
+
+            // 将内容中的换行符转换为 <br> 格式
+            var contentHtml = content.split("\n").map(function(s) { return s.trim(); }).join("<br>");
+
+            if (editingId) {
+                // 更新
+                if (updateEssay(editingId, title, date, summary, contentHtml)) {
+                    showToast("已保存", "success");
+                    // 不重置表单，保持当前内容不变
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("保存失败", "error");
+                }
+            } else {
+                // 新增
+                var newId = getNextId();
+                if (addEssay(newId, title, date, summary, contentHtml)) {
+                    showToast("已保存", "success");
+                    // 切换为编辑模式，保持内容不变
+                    editingId = newId;
+                    document.getElementById("form-title").textContent = "编辑随笔 - " + title;
+                    document.getElementById("date-input").disabled = true;
+                    document.getElementById("delete-btn").style.display = "";
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("保存失败", "error");
+                }
+            }
+        }
+
+        // 删除确认（从列表）
+        var pendingDeleteId = null;
+
+        function confirmDelete(id) {
+            pendingDeleteId = id;
+            var essay = getEssayById(id);
+            var label = essay ? essay.title : ("#" + id);
+            document.getElementById("modal-text").textContent = "确认删除《" + label + "》？";
+            document.getElementById("modal").classList.add("show");
+        }
+
+        function closeModal() {
+            document.getElementById("modal").classList.remove("show");
+            pendingDeleteId = null;
+        }
+
+        document.getElementById("modal-confirm").addEventListener("click", defaultModalConfirm);
+
+        function defaultModalConfirm() {
+            if (pendingDeleteId) {
+                if (deleteEssay(pendingDeleteId)) {
+                    showToast("随笔已删除", "success");
+                    if (editingId === pendingDeleteId) {
+                        initForm();
+                    }
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("删除失败", "error");
+                }
+                closeModal();
+            }
+        }
+
+        // 点击遮罩关闭弹窗
+        document.getElementById("modal").addEventListener("click", function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+    </script>
+</body>
+</html>

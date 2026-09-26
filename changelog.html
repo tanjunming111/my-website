@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>更新日志 - 我的网站</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #333;
+        }
+        .header {
+            background-color: #f1f1f1;
+            padding: 20px;
+        }
+        .header a {
+            display: inline-block;
+        }
+        .header img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .container {
+            max-width: 700px;
+            margin: 30px auto 80px;
+            padding: 0 15px;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background-color: #d0d0d0;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .log-entry {
+            margin-bottom: 24px;
+        }
+        .log-entry h3 {
+            margin-bottom: 0;
+        }
+        .log-date {
+            font-size: 16px;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 6px;
+        }
+        .log-content {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #444;
+            white-space: pre-wrap;
+        }
+        .footer {
+            background-color: #f1f1f1;
+            text-align: center;
+            padding: 20px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .footer a {
+            color: #2d8cf0;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="index.html">
+            <img src="tjm.jpg" alt="tjm">
+        </a>
+    </div>
+
+    <div class="container">
+        <a href="javascript:history.back()" class="back-btn">&larr; 返回</a>
+        <h1 style="text-align: center;">更新日志</h1>
+
+        <div class="log-entry">
+
+            <!-- 编辑日志内容 -->
+             <h3>2026-07-13</h3>
+            <div class="log-content">随笔内容页面加宽。
+新增保存按钮，能在编辑的同时保存内容。</div>
+             <h3>2026-07-11</h3>
+            <div class="log-content">增加了随笔编辑功能。
+随笔编辑功能中增加了摘要提取功能。</div>
+            <h3>2026-07-10</h3>
+            <div class="log-content">增加了随笔记录功能。
+增加了前言栏。</div>
+            <h3>2026-07-07</h3>
+            <div class="log-content">增加更新日志页面。
+增加了首页背景图。
+增加了上一篇和下一篇的快捷链接。</div>
+            <h3>2026-07-06</h3>
+            <div class="log-content">编辑内容框增加部分 Markdown 功能。</div>
+            <h3>2026-07-05</h3>
+            <div class="log-content">增大编辑日记的内容框。</div>
+            <h3>2026-07-04</h3>
+            <div class="log-content">设置编辑页面和内容关联，加入编辑按钮，能在本地修改日记。
+使网站框架和文字同时渲染，增加网页跳转的渐变功能。</div>
+            <h3>2026-07-03</h3>
+            <div class="log-content">将网站部署到 Github 上。</div>
+            <h3>2026-07-02</h3>
+            <div class="log-content">导入Trae IDE，克隆 html 页面，形成日记网站。</div>
+            <h3>2026-07-01</h3>
+            <div class="log-content">网站框架制作完成。</div>
+
+
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>我的网站</p>
+        <p><a href="changelog.html">更新日志</a></p>
+    </div>
+</body>
+</html>

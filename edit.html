@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网站 - 编辑日记</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .edit-container {
+            max-width: 800px;
+            margin: 30px auto 50px;
+            padding: 0 15px;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 8px 20px;
+            background-color: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .edit-section {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .edit-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input[type="date"] {
+            width: 100%;
+            max-width: 250px;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+        .form-group textarea {
+            width: 100%;
+            min-height: 350px;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+            line-height: 1.7;
+            resize: vertical;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .btn-save {
+            background-color: #333;
+            color: #fff;
+        }
+        .btn-save:hover {
+            background-color: #555;
+        }
+        .btn-delete {
+            background-color: #d9534f;
+            color: #fff;
+        }
+        .btn-delete:hover {
+            background-color: #c9302c;
+        }
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+        .btn-danger {
+            background-color: #d9534f;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background-color: #c9302c;
+        }
+        .existing-list {
+            list-style: none;
+            padding: 0;
+        }
+        .existing-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .existing-list li span {
+            font-size: 15px;
+            color: #333;
+        }
+        .existing-list li .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .existing-list li .btn {
+            padding: 6px 16px;
+            font-size: 13px;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 15px;
+            color: #fff;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .toast.success {
+            background-color: #5cb85c;
+        }
+        .toast.error {
+            background-color: #d9534f;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9998;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal {
+            background: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .modal p {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .modal .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .file-link-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .btn-link {
+            display: inline-block;
+            padding: 8px 18px;
+            background-color: #2d8cf0;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .btn-link:hover {
+            background-color: #2d8cf0dd;
+        }
+        .file-status {
+            font-size: 13px;
+            color: #999;
+        }
+        .file-status.linked {
+            color: #5cb85c;
+        }
+
+        /* ===== 字数统计 ===== */
+        .char-count {
+            text-align: right;
+            font-size: 13px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        /* ===== Markdown 预览切换 ===== */
+        .md-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .md-tab {
+            padding: 6px 18px;
+            border: 1px solid #ccc;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            background: #fff;
+            color: #555;
+            transition: all 0.2s ease;
+        }
+        .md-tab.active {
+            background: #333;
+            color: #fff;
+            border-color: #333;
+        }
+        .md-tab:hover:not(.active) {
+            background: #f0f0f0;
+        }
+        .md-preview {
+            width: 100%;
+            min-height: 350px;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+            line-height: 1.7;
+            box-sizing: border-box;
+            background: #fff;
+            display: none;
+            overflow-y: auto;
+        }
+        .md-preview.show {
+            display: block;
+        }
+        .md-preview h1, .md-preview h2, .md-preview h3,
+        .md-preview h4, .md-preview h5, .md-preview h6 {
+            margin: 0.5em 0 0.3em;
+            color: #333;
+        }
+        .md-preview h1 { font-size: 1.6em; }
+        .md-preview h2 { font-size: 1.35em; }
+        .md-preview h3 { font-size: 1.15em; }
+        .md-preview p { margin: 0.5em 0; }
+        .md-preview ul, .md-preview ol { padding-left: 1.5em; margin: 0.5em 0; }
+        .md-preview blockquote {
+            border-left: 4px solid #ddd;
+            padding-left: 12px;
+            color: #666;
+            margin: 0.5em 0;
+        }
+        .md-preview code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .md-preview pre {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        .md-preview pre code {
+            background: none;
+            padding: 0;
+        }
+        .md-preview img { max-width: 100%; border-radius: 6px; }
+        .md-preview table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0.5em 0;
+        }
+        .md-preview th, .md-preview td {
+            border: 1px solid #ddd;
+            padding: 8px 10px;
+            text-align: left;
+        }
+        .md-preview th { background: #f5f5f5; }
+
+        /* ===== 加载状态：所有内容渲染完成后再一次性呈现 ===== */
+        body {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+        body.loading {
+            opacity: 0;
+            transition: none;
+        }
+    </style>
+</head>
+<body class="loading">
+    <div style="background-color: #f1f1f1; padding: 20px;">
+        <a href="index.html">
+            <img src="tjm.jpg" alt="tjm"
+                style="width:80px; height:80px; border-radius:50%; object-fit:cover;">
+        </a>
+    </div>
+
+    <div class="edit-container">
+        <a href="javascript:history.back()" class="back-btn">&larr; 返回上一页</a>
+
+        <div class="file-link-bar">
+            <button class="btn-link" id="link-btn" onclick="linkFile()">关联本地文件</button>
+            <span class="file-status" id="file-status">未关联本地文件</span>
+        </div>
+
+        <!-- 新增/编辑区域 -->
+        <div class="edit-section">
+            <h3 id="form-title">新增日记</h3>
+            <div class="form-group">
+                <label for="date-input">日期</label>
+                <input type="date" id="date-input" lang="zh-CN">
+            </div>
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <label for="content-input" style="margin-bottom: 0;">内容</label>
+                    <button class="btn btn-save" onclick="quickSaveEntry()" style="padding: 6px 18px; font-size: 13px;">保存</button>
+                </div>
+                <div class="md-toolbar">
+                    <span class="md-tab active" id="md-edit-tab" onclick="switchMdMode('edit')">编辑</span>
+                    <span class="md-tab" id="md-preview-tab" onclick="switchMdMode('preview')">预览</span>
+                </div>
+                <textarea id="content-input" placeholder="支持 Markdown 语法：**加粗** *斜体* #标题 -列表等" oninput="updateCharCount(); updatePreview();"></textarea>
+                <div class="md-preview" id="md-preview"></div>
+                <div class="char-count" id="char-count">已写 0 字</div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-save" onclick="saveEntry()">发布</button>
+                <button class="btn btn-danger" id="delete-btn" onclick="deleteCurrentEntry()" style="display:none">删除</button>
+            </div>
+        </div>
+
+        <!-- 已有日记列表 -->
+        <div class="edit-section">
+            <h3>已有日记</h3>
+            <ul class="existing-list" id="existing-list">
+                <!-- 由 JS 动态生成 -->
+            </ul>
+        </div>
+    </div>
+
+    <div style="background-color:#f1f1f1; text-align:center; padding:20px;">
+        <p>我的网站</p>
+        <p><a href="changelog.html" style="color:#2d8cf0; text-decoration:none;">更新日志</a></p>
+    </div>
+
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 删除确认弹窗 -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <p id="modal-text">确认删除？</p>
+            <div class="modal-actions">
+                <button class="btn btn-delete" id="modal-confirm">确认删除</button>
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 动态加载 diary-data.js（带时间戳，强制获取最新版本）
+        (function() {
+            var s = document.createElement('script');
+            s.src = 'diary-data.js?t=' + Date.now();
+            s.onload = function() {
+                renderList();
+                setTodayDate();
+                initFileLink();
+                // 检查 URL 参数，自动加载对应日期的日记
+                var params = new URLSearchParams(window.location.search);
+                var dateParam = params.get("date");
+                if (dateParam) {
+                    editEntry(dateParam);
+                }
+
+                // 所有内容渲染完毕，一次性显示页面
+                document.body.classList.remove('loading');
+            };
+            document.head.appendChild(s);
+        })();
+
+        var editingDate = null; // 当前正在编辑的日期（null 表示新增模式）
+        var fileHandle = null;  // 关联的本地文件句柄
+
+        // ===== IndexedDB 存取文件句柄 =====
+        var DB_NAME = "diary_db";
+        var STORE_NAME = "file_handles";
+
+        function openDB() {
+            return new Promise(function(resolve, reject) {
+                var req = indexedDB.open(DB_NAME, 1);
+                req.onupgradeneeded = function() {
+                    req.result.createObjectStore(STORE_NAME);
+                };
+                req.onsuccess = function() { resolve(req.result); };
+                req.onerror = function() { reject(req.error); };
+            });
+        }
+
+        async function saveHandle(handle) {
+            var db = await openDB();
+            return new Promise(function(resolve, reject) {
+                var tx = db.transaction(STORE_NAME, "readwrite");
+                tx.objectStore(STORE_NAME).put(handle, "diary_file");
+                tx.oncomplete = function() { resolve(); };
+                tx.onerror = function() { reject(tx.error); };
+            });
+        }
+
+        async function loadHandle() {
+            var db = await openDB();
+            return new Promise(function(resolve, reject) {
+                var tx = db.transaction(STORE_NAME, "readonly");
+                var req = tx.objectStore(STORE_NAME).get("diary_file");
+                req.onsuccess = function() { resolve(req.result || null); };
+                req.onerror = function() { reject(req.error); };
+            });
+        }
+
+        // ===== 关联本地文件 =====
+        async function linkFile() {
+            if (!window.showOpenFilePicker) {
+                showToast("当前浏览器不支持文件关联功能", "error");
+                return;
+            }
+            try {
+                var handle = await window.showOpenFilePicker({
+                    types: [{
+                        description: "JavaScript 文件",
+                        accept: { "application/javascript": [".js"] }
+                    }]
+                });
+                fileHandle = handle[0];
+                await saveHandle(fileHandle);
+                updateFileStatus(true);
+                showToast("已关联本地文件", "success");
+            } catch (e) {
+                if (e.name !== "AbortError") {
+                    showToast("关联失败: " + e.message, "error");
+                }
+            }
+        }
+
+        // 更新文件状态显示
+        function updateFileStatus(linked) {
+            var status = document.getElementById("file-status");
+            if (linked) {
+                status.textContent = "已关联，保存时自动同步到本地文件";
+                status.className = "file-status linked";
+            } else {
+                status.textContent = "未关联本地文件";
+                status.className = "file-status";
+            }
+        }
+
+        // 检查并请求文件权限
+        async function verifyPermission(handle) {
+            var opts = { mode: "readwrite" };
+            if ((await handle.queryPermission(opts)) === "granted") {
+                return true;
+            }
+            if ((await handle.requestPermission(opts)) === "granted") {
+                return true;
+            }
+            return false;
+        }
+
+        // 生成 diary-data.js 文件内容
+        function generateFileContent() {
+            var data = loadDiaryData();
+            var lines = [];
+            lines.push("// ==========================================");
+            lines.push("// 日记数据文件 - 数据管理核心");
+            lines.push("// ==========================================");
+            lines.push("// 数据直接存储在此文件中");
+            lines.push("// 通过 edit.html 编辑后自动同步写入本地文件");
+            lines.push("");
+            lines.push("// 日记数据（编辑后自动同步到此文件）");
+            lines.push("var defaultDiaryData = [");
+            data.forEach(function(entry, i) {
+                lines.push("    {");
+                lines.push("        date: \"" + entry.date + "\",");
+                lines.push("        paragraphs: [");
+                entry.paragraphs.forEach(function(p) {
+                    lines.push("            \"" + p.replace(/\\/g, "\\\\").replace(/"/g, "\\\"") + "\",");
+                });
+                lines.push("        ]");
+                if (i < data.length - 1) {
+                    lines.push("    },");
+                } else {
+                    lines.push("    }");
+                }
+            });
+            lines.push("];");
+            lines.push("");
+            lines.push("// ===== 数据读写接口 =====");
+            lines.push("");
+            lines.push("function loadDiaryData() {");
+            lines.push("    return defaultDiaryData;");
+            lines.push("}");
+            lines.push("");
+            lines.push("function saveDiaryData(data) {");
+            lines.push("    defaultDiaryData = data;");
+            lines.push("}");
+            lines.push("");
+            lines.push("function getDiaryEntry(date) {");
+            lines.push("    return defaultDiaryData.find(function(e) { return e.date === date; });");
+            lines.push("}");
+            lines.push("");
+            lines.push("function addDiaryEntry(date, paragraphs) {");
+            lines.push("    if (defaultDiaryData.find(function(e) { return e.date === date; })) return false;");
+            lines.push("    defaultDiaryData.push({ date: date, paragraphs: paragraphs });");
+            lines.push("    defaultDiaryData.sort(function(a, b) { return a.date < b.date ? -1 : 1; });");
+            lines.push("    return true;");
+            lines.push("}");
+            lines.push("");
+            lines.push("function updateDiaryEntry(date, paragraphs) {");
+            lines.push("    var entry = defaultDiaryData.find(function(e) { return e.date === date; });");
+            lines.push("    if (entry) { entry.paragraphs = paragraphs; return true; }");
+            lines.push("    return false;");
+            lines.push("}");
+            lines.push("");
+            lines.push("function deleteDiaryEntry(date) {");
+            lines.push("    var newData = defaultDiaryData.filter(function(e) { return e.date !== date; });");
+            lines.push("    if (newData.length === defaultDiaryData.length) return false;");
+            lines.push("    defaultDiaryData = newData;");
+            lines.push("    return true;");
+            lines.push("}");
+            lines.push("");
+            lines.push("function getDiaryByMonth() {");
+            lines.push("    var grouped = {};");
+            lines.push("    defaultDiaryData.forEach(function(entry) {");
+            lines.push("        var month = entry.date.substring(0, 7);");
+            lines.push("        if (!grouped[month]) grouped[month] = [];");
+            lines.push("        grouped[month].push(entry);");
+            lines.push("    });");
+            lines.push("    return grouped;");
+            lines.push("}");
+            lines.push("");
+            lines.push("function getMonthLabel(month) {");
+            lines.push("    var parts = month.split(\"-\");");
+            lines.push("    return parts[0] + \"年\" + parseInt(parts[1]) + \"月\";");
+            lines.push("}");
+            lines.push("");
+            lines.push("function formatDate(dateStr) {");
+            lines.push("    var parts = dateStr.split(\"-\");");
+            lines.push("    return parseInt(parts[1]) + \"月\" + parseInt(parts[2]) + \"日\";");
+            lines.push("}");
+            lines.push("");
+            lines.push("function formatDateTitle(dateStr) {");
+            lines.push("    var parts = dateStr.split(\"-\");");
+            lines.push("    return parts[0] + \".\" + parseInt(parts[1]) + \".\" + parseInt(parts[2]);");
+            lines.push("}");
+            return lines.join("\n");
+        }
+
+        // 同步写入本地文件
+        async function syncToFile() {
+            if (!fileHandle) return;
+            try {
+                var hasPermission = await verifyPermission(fileHandle);
+                if (!hasPermission) {
+                    showToast("文件写入权限被拒绝", "error");
+                    return;
+                }
+                var content = generateFileContent();
+                var writable = await fileHandle.createWritable();
+                await writable.write(content);
+                await writable.close();
+            } catch (e) {
+                showToast("同步到文件失败: " + e.message, "error");
+            }
+        }
+
+        // 页面加载时检查已关联的文件
+        async function initFileLink() {
+            try {
+                var handle = await loadHandle();
+                if (handle) {
+                    fileHandle = handle;
+                    updateFileStatus(true);
+                }
+            } catch (e) {
+                console.error("加载文件句柄失败", e);
+            }
+        }
+
+        // 显示提示消息
+        function showToast(msg, type) {
+            var toast = document.getElementById("toast");
+            toast.textContent = msg;
+            toast.className = "toast show " + (type || "success");
+            setTimeout(function() {
+                toast.className = "toast";
+            }, 2500);
+        }
+
+        // 渲染已有日记列表
+        function renderList() {
+            var data = loadDiaryData();
+            var list = document.getElementById("existing-list");
+
+            if (data.length === 0) {
+                list.innerHTML = "<li><span>暂无日记</span></li>";
+                return;
+            }
+
+            var html = "";
+            data.forEach(function(entry) {
+                html += '<li>';
+                var parts = entry.date.split("-");
+                html += '<span>' + parseInt(parts[0]) + '年' + parseInt(parts[1]) + '月' + parseInt(parts[2]) + '日</span>';
+                html += '<div class="item-actions">';
+                html += '<button class="btn btn-secondary" onclick="editEntry(\'' + entry.date + '\')">编辑</button>';
+                html += '<button class="btn btn-delete" onclick="confirmDelete(\'' + entry.date + '\')">删除</button>';
+                html += '</div>';
+                html += '</li>';
+            });
+            list.innerHTML = html;
+        }
+
+        // 新增模式：重置表单
+        function setTodayDate() {
+            var today = new Date();
+            var yyyy = today.getFullYear();
+            var mm = String(today.getMonth() + 1).padStart(2, '0');
+            var dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById("date-input").value = yyyy + "-" + mm + "-" + dd;
+        }
+
+        function resetForm() {
+            editingDate = null;
+            document.getElementById("form-title").textContent = "新增日记";
+            setTodayDate();
+            document.getElementById("date-input").disabled = false;
+            document.getElementById("content-input").value = "";
+            updateCharCount(); // 重置字数统计
+            document.getElementById("delete-btn").style.display = "none"; // 新增模式下隐藏删除按钮
+        }
+
+        // 字数统计
+        function updateCharCount() {
+            var text = document.getElementById("content-input").value;
+            document.getElementById("char-count").textContent = "已写 " + text.length + " 字";
+        }
+
+        // 切换编辑/预览模式
+        function switchMdMode(mode) {
+            var textarea = document.getElementById("content-input");
+            var preview = document.getElementById("md-preview");
+            var editTab = document.getElementById("md-edit-tab");
+            var previewTab = document.getElementById("md-preview-tab");
+
+            if (mode === "preview") {
+                // 切换到预览：渲染 Markdown（启用 breaks 使换行可见）
+                preview.innerHTML = marked.parse(textarea.value || "*（暂无内容）*", { breaks: true });
+                textarea.style.display = "none";
+                preview.classList.add("show");
+                editTab.classList.remove("active");
+                previewTab.classList.add("active");
+            } else {
+                // 切换到编辑
+                textarea.style.display = "";
+                preview.classList.remove("show");
+                editTab.classList.add("active");
+                previewTab.classList.remove("active");
+            }
+        }
+
+        // 实时更新预览内容（在编辑模式下后台刷新，切换到预览时直接显示最新内容）
+        function updatePreview() {
+            var preview = document.getElementById("md-preview");
+            if (preview.classList.contains("show")) {
+                preview.innerHTML = marked.parse(document.getElementById("content-input").value || "*（暂无内容）*", { breaks: true });
+            }
+        }
+
+        // 编辑模式：加载已有日记到表单
+        function editEntry(date) {
+            var entry = getDiaryEntry(date);
+            if (entry) {
+                editingDate = date;
+                document.getElementById("form-title").textContent = "编辑日记 - " + formatDate(date);
+                document.getElementById("date-input").value = date;
+                document.getElementById("date-input").disabled = true; // 编辑时不可改日期
+                document.getElementById("content-input").value = entry.paragraphs.join("\n");
+                updateCharCount(); // 更新字数统计
+                document.getElementById("delete-btn").style.display = ""; // 编辑模式下显示删除按钮
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+        }
+
+        // 删除当前正在编辑的日记
+        function deleteCurrentEntry() {
+            if (!editingDate) return;
+            // 使用已有的确认弹窗
+            document.getElementById("modal-text").textContent = "确认删除 " + formatDate(editingDate) + " 的日记？";
+            document.getElementById("modal").classList.add("show");
+            // 把确认按钮的 onclick 临时绑定为执行删除
+            document.getElementById("modal-confirm").onclick = function() {
+                if (deleteDiaryEntry(editingDate)) {
+                    showToast("日记已删除", "success");
+                    resetForm();
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("删除失败", "error");
+                }
+                closeModal();
+                // 恢复确认按钮的默认行为（列表删除）
+                document.getElementById("modal-confirm").onclick = defaultModalConfirm;
+            };
+        }
+
+        //发布（新增或更新）
+        function saveEntry() {
+            var date = document.getElementById("date-input").value;
+            var content = document.getElementById("content-input").value;
+
+            if (!date) { //日期不存在
+                showToast("日期不存在", "error");
+                return;
+            }
+            if (!content.trim()) {
+                showToast("内容不能为空", "error");
+                return;
+            }
+
+            // 按换行分段
+            var paragraphs = content.split("\n").map(function(s) {
+                return s.trim();
+            }).filter(function(s) {
+                return s.length > 0;
+            });
+
+            if (editingDate) {
+                // 更新
+                if (updateDiaryEntry(editingDate, paragraphs)) {
+                    showToast("日记已更新", "success");
+                    resetForm();
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("更新失败", "error");
+                }
+            } else {
+                // 新增
+                if (addDiaryEntry(date, paragraphs)) {
+                    showToast("日记已添加", "success");
+                    resetForm();
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("该日期已存在日记，请直接编辑", "error");
+                }
+            }
+        }
+
+        // 快速保存（保存在内容栏右侧的按钮，不重置表单、不跳转页面）
+        function quickSaveEntry() {
+            var date = document.getElementById("date-input").value;
+            var content = document.getElementById("content-input").value;
+
+            if (!date) {
+                showToast("日期不存在", "error");
+                return;
+            }
+            if (!content.trim()) {
+                showToast("内容不能为空", "error");
+                return;
+            }
+
+            // 按换行分段
+            var paragraphs = content.split("\n").map(function(s) {
+                return s.trim();
+            }).filter(function(s) {
+                return s.length > 0;
+            });
+
+            if (editingDate) {
+                // 更新
+                if (updateDiaryEntry(editingDate, paragraphs)) {
+                    showToast("已保存", "success");
+                    // 不重置表单，保持当前内容不变
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("保存失败", "error");
+                }
+            } else {
+                // 新增
+                if (addDiaryEntry(date, paragraphs)) {
+                    showToast("已保存", "success");
+                    // 切换为编辑模式，保持内容不变
+                    editingDate = date;
+                    document.getElementById("form-title").textContent = "编辑日记 - " + formatDate(date);
+                    document.getElementById("date-input").disabled = true;
+                    document.getElementById("delete-btn").style.display = "";
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("该日期已存在日记", "error");
+                }
+            }
+        }
+
+        // 删除确认
+        var pendingDeleteDate = null;
+
+        function confirmDelete(date) {
+            pendingDeleteDate = date;
+            document.getElementById("modal-text").textContent = "确认删除 " + formatDate(date) + " 的日记？";
+            document.getElementById("modal").classList.add("show");
+        }
+
+        function closeModal() {
+            document.getElementById("modal").classList.remove("show");
+            pendingDeleteDate = null;
+        }
+
+        document.getElementById("modal-confirm").addEventListener("click", defaultModalConfirm);
+
+        // 从列表删除的默认确认处理
+        function defaultModalConfirm() {
+            if (pendingDeleteDate) {
+                if (deleteDiaryEntry(pendingDeleteDate)) {
+                    showToast("日记已删除", "success");
+                    // 如果正在编辑被删除的日记，重置表单
+                    if (editingDate === pendingDeleteDate) {
+                        resetForm();
+                    }
+                    renderList();
+                    syncToFile();
+                } else {
+                    showToast("删除失败", "error");
+                }
+                closeModal();
+            }
+        }
+
+        // 点击遮罩关闭弹窗
+        document.getElementById("modal").addEventListener("click", function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+    </script>
+</body>
+</html>
