@@ -66,7 +66,6 @@ window.initInteractions = async function (contentType, contentId) {
             if (mineError) throw mineError;
             likeButton.dataset.liked = mine ? 'true' : 'false';
             likeButton.firstChild.textContent = mine ? '♥ 已点赞（' : '♡ 点赞（';
-            likeButton.disabled = Boolean(mine);
         }
 
         async function refreshComments() {
@@ -119,14 +118,18 @@ window.initInteractions = async function (contentType, contentId) {
         updateCooldown();
 
         likeButton.addEventListener('click', async () => {
+            const wasLiked = likeButton.dataset.liked === 'true';
             likeButton.disabled = true;
             try {
-                const { error } = await db.from('content_likes').insert({ content_type: contentType, content_id: String(contentId), visitor_id: visitorId });
+                const request = db.from('content_likes');
+                const { error } = wasLiked
+                    ? await request.delete().eq('content_type', contentType).eq('content_id', String(contentId)).eq('visitor_id', visitorId)
+                    : await request.insert({ content_type: contentType, content_id: String(contentId), visitor_id: visitorId });
                 if (error) throw error;
                 await refreshLikes();
                 showToast(likeButton.dataset.liked === 'true' ? '点赞成功' : '已取消点赞');
             } catch (error) { showMessage('点赞操作失败：' + error.message, true); }
-            finally { likeButton.disabled = likeButton.dataset.liked === 'true'; }
+            finally { likeButton.disabled = false; }
         });
 
         document.getElementById('comment-form').addEventListener('submit', async event => {

@@ -28,8 +28,7 @@ create index if not exists content_comments_target_created_idx
 alter table public.content_likes enable row level security;
 alter table public.content_comments enable row level security;
 
-grant select, insert on public.content_likes to anon, authenticated;
-revoke delete on public.content_likes from anon, authenticated;
+grant select, insert, delete on public.content_likes to anon, authenticated;
 grant select, insert on public.content_comments to anon, authenticated;
 grant usage, select on sequence public.content_comments_id_seq to anon, authenticated;
 
@@ -46,6 +45,10 @@ create policy "Anyone can read content likes"
 create policy "Anyone can add a content like"
   on public.content_likes for insert to anon, authenticated
   with check (content_type in ('diary', 'essay'));
+
+create policy "Visitors can remove content likes"
+  on public.content_likes for delete to anon, authenticated
+  using (true);
 
 create policy "Anyone can read content comments"
   on public.content_comments for select to anon, authenticated
