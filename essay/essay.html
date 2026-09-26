@@ -178,6 +178,7 @@
         async function loadInteractions(essayId) {
             const panel = document.getElementById('interaction-panel');
             panel.hidden = false;
+            setInteractionMessage('正在连接互动服务…');
             if (!db) {
                 setInteractionMessage('请先在项目根目录的 supabase-config.js 中配置 Supabase URL 和 Publishable key。');
                 document.getElementById('like-button').disabled = true;
@@ -234,11 +235,13 @@
                 });
             }
 
-            try {
-                await Promise.all([refreshLikes(), refreshComments()]);
-            } catch (error) {
-                setInteractionMessage('加载互动内容失败：' + error.message, true);
-            }
+            let interactionsReady = false;
+            const initialLoad = Promise.race([
+                Promise.all([refreshLikes(), refreshComments()]),
+                new Promise(function(_, reject) { setTimeout(function() { reject(new Error('连接 Supabase 超时，请检查网络后刷新页面。')); }, 12000); })
+            ])
+                .then(function() { interactionsReady = true; setInteractionMessage(''); })
+                .catch(function(error) { setInteractionMessage('互动数据加载失败：' + error.message, true); });
 
             const submitButton = document.querySelector('#comment-form button[type="submit"]');
             const cooldownKey = 'comment-cooldown:' + visitorId;
@@ -259,6 +262,9 @@
             updateCooldown();
 
             likeButton.addEventListener('click', async () => {
+                setInteractionMessage('正在处理点赞…');
+                await initialLoad;
+                if (!interactionsReady) return;
                 const wasLiked = likeButton.dataset.liked === 'true';
                 likeButton.disabled = true;
                 try {
@@ -268,6 +274,7 @@
                         : await request.insert({ content_type: 'essay', content_id: String(essayId), visitor_id: visitorId });
                     if (error) throw error;
                     await refreshLikes();
+                    setInteractionMessage('');
                     showToast(likeButton.dataset.liked === 'true' ? '点赞成功' : '已取消点赞');
                 } catch (error) {
                     setInteractionMessage('点赞操作失败：' + error.message, true);
@@ -287,6 +294,9 @@
                     return;
                 }
                 if (Date.now() < cooldownUntil) { updateCooldown(); return; }
+                setInteractionMessage('正在提交评论…');
+                await initialLoad;
+                if (!interactionsReady) return;
                 const submitButton = event.currentTarget.querySelector('button[type="submit"]');
                 submitButton.disabled = true;
                 try {
@@ -297,6 +307,7 @@
                     cooldownUntil = Date.now() + 10000;
                     localStorage.setItem(cooldownKey, String(cooldownUntil));
                     updateCooldown();
+                    setInteractionMessage('');
                     showToast('评论成功');
                 } catch (error) {
                     setInteractionMessage(error.message.includes('10 seconds') || error.message.includes('10 秒')

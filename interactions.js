@@ -44,6 +44,7 @@ window.initInteractions = async function (contentType, contentId) {
     }
 
     try {
+        showMessage('正在连接互动服务…');
         const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
         const db = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY);
         const visitorKey = 'blog-visitor-id';
@@ -98,7 +99,13 @@ window.initInteractions = async function (contentType, contentId) {
             });
         }
 
-        await Promise.all([refreshLikes(), refreshComments()]);
+        let interactionsReady = false;
+        const initialLoad = Promise.race([
+            Promise.all([refreshLikes(), refreshComments()]),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('连接 Supabase 超时，请检查网络后刷新页面。')), 12000))
+        ])
+            .then(() => { interactionsReady = true; showMessage(''); })
+            .catch(error => { showMessage('互动数据加载失败：' + error.message, true); });
         const submitButton = document.querySelector('#comment-form button[type="submit"]');
         const cooldownKey = `comment-cooldown:${visitorId}`;
         let cooldownUntil = Number(localStorage.getItem(cooldownKey)) || 0;
@@ -118,6 +125,9 @@ window.initInteractions = async function (contentType, contentId) {
         updateCooldown();
 
         likeButton.addEventListener('click', async () => {
+            showMessage('正在处理点赞…');
+            await initialLoad;
+            if (!interactionsReady) return;
             const wasLiked = likeButton.dataset.liked === 'true';
             likeButton.disabled = true;
             try {
@@ -127,6 +137,7 @@ window.initInteractions = async function (contentType, contentId) {
                     : await request.insert({ content_type: contentType, content_id: String(contentId), visitor_id: visitorId });
                 if (error) throw error;
                 await refreshLikes();
+                showMessage('');
                 showToast(likeButton.dataset.liked === 'true' ? '点赞成功' : '已取消点赞');
             } catch (error) { showMessage('点赞操作失败：' + error.message, true); }
             finally { likeButton.disabled = false; }
@@ -138,6 +149,9 @@ window.initInteractions = async function (contentType, contentId) {
             const content = document.getElementById('comment-content').value.trim();
             if (!nickname || !content) { showMessage('请填写昵称和评论内容。', true); return; }
             if (Date.now() < cooldownUntil) { updateCooldown(); return; }
+            showMessage('正在提交评论…');
+            await initialLoad;
+            if (!interactionsReady) return;
             const submit = event.currentTarget.querySelector('button[type="submit"]');
             submit.disabled = true;
             try {
@@ -148,6 +162,7 @@ window.initInteractions = async function (contentType, contentId) {
                 cooldownUntil = Date.now() + 10000;
                 localStorage.setItem(cooldownKey, String(cooldownUntil));
                 updateCooldown();
+                showMessage('');
                 showToast('评论成功');
             } catch (error) {
                 showMessage(error.message.includes('10 seconds') || error.message.includes('10 秒')
